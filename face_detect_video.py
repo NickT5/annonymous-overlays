@@ -1,4 +1,5 @@
 import cv2 as cv
+from time import time
 
 
 def blur_face_avg(img):
@@ -56,6 +57,11 @@ def face_detect_video():
     # Load the face classifier.
     face_classifier = load_face_classifier()
 
+    # Get start time.
+    time_start = time()
+
+    # Init number of frames variable.
+    n_frames = 0
     while True:
         key = 0xFF & cv.waitKey(1)
 
@@ -85,6 +91,17 @@ def face_detect_video():
             show_faces(face_detections, frame)
         else:
             show_face(frame)
+
+        n_frames += 1
+
+    # Get end time.
+    time_end = time()
+
+    # Elapsed time in seconds.
+    time_elapsed = time_end - time_start
+    # Calculate and print frames per second.
+    fps = n_frames / time_elapsed
+    print(f"Fps = {fps:.2f}; Time elapsed = {time_elapsed:.2f} seconds.")
 
     # When everything done, release the capture
     capture.release()
