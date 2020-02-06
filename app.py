@@ -1,5 +1,5 @@
-from face_detect_image import face_detect_image
-from face_detect_video import face_detect_video
+from detect_blur_image import detect_blur_image
+from detect_blur_video import detect_blur_video
 
 
 def menu():
@@ -17,10 +17,10 @@ def main():
         choice = menu()
         # Execute chosen menu option.
         if choice == '0':
-            face_detect_image()
+            detect_blur_image()
             break
         elif choice == '1':
-            face_detect_video()
+            detect_blur_video()
             break
         elif choice == '2':
             print("Exiting program")

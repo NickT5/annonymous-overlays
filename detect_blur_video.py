@@ -47,7 +47,7 @@ def roi_image(x, y, w, h, img):
     return img[y:y+h, x:x+w]
 
 
-def face_detect_video():
+def detect_blur_video():
     # State variable: to blur or not to blur.
     to_blur = True
 

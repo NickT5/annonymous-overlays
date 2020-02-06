@@ -83,7 +83,7 @@ def roi_image(x, y, w, h, img):
     return img[y:y+h, x:x+w]
 
 
-def face_detect_image():
+def detect_blur_image():
     img, gray = open_face()
     # show_face(img)
 
