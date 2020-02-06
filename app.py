@@ -1,5 +1,5 @@
-import numpy as np
 from face_detect_image import face_detect_image
+from face_detect_video import face_detect_video
 
 
 def menu():
@@ -20,7 +20,7 @@ def main():
             face_detect_image()
             break
         elif choice == '1':
-            pass
+            face_detect_video()
             break
         elif choice == '2':
             print("Exiting program")
