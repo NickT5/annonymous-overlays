@@ -1,13 +1,14 @@
 from detect_blur_image import detect_blur_image
 from detect_blur_video import detect_blur_video
-
+from googly_eyes import googly_eyes
 
 def menu():
     choice = input('''
 ---- Detect and blur faces -----
 | 0: Detect and blur an image. |
 | 1: Detect and blur a video.  |
-| 2: exit                      |
+| 2: Googly eyes.              |
+| 3: exit                      |
 |------------------------------|\n''')
     return choice
 
@@ -23,6 +24,9 @@ def main():
             detect_blur_video()
             break
         elif choice == '2':
+            googly_eyes()
+            break
+        elif choice == '3':
             print("Exiting program")
             break
         else:
