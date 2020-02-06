@@ -47,6 +47,9 @@ def roi_image(x, y, w, h, img):
 
 
 def face_detect_video():
+    # State variable: to blur or not to blur.
+    to_blur = True
+
     # Open a video capture.
     capture = cv.VideoCapture(0, cv.CAP_DSHOW)
 
@@ -54,9 +57,15 @@ def face_detect_video():
     face_classifier = load_face_classifier()
 
     while True:
+        key = 0xFF & cv.waitKey(1)
+
         # Exit the loop if 'q' is pressed.
-        if cv.waitKey(1) & 0xFF == ord('q'):
+        if key == ord('q'):
             break
+
+        # Toggle blurring is 'b' is pressed.
+        if key == ord('b'):
+            to_blur = not to_blur
 
         # Get a frame from the video capture.
         ret, frame = capture.read()
@@ -68,11 +77,14 @@ def face_detect_video():
         # Convert RGB frame to grayscale.
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-        # Detect faces.
-        face_detections = detect_face(face_classifier, gray)
+        if to_blur:
+            # Detect faces.
+            face_detections = detect_face(face_classifier, gray)
 
-        # Show detected faces.
-        show_faces(face_detections, frame)
+            # Show detected faces.
+            show_faces(face_detections, frame)
+        else:
+            show_face(frame)
 
     # When everything done, release the capture
     capture.release()
