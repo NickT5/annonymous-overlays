@@ -31,16 +31,13 @@ def show_eyes(eyes, img, overlays):
     roi, resized_eye = None, None
     for i, (x, y, w, h) in enumerate(eyes):
         # Draw a rectangle on the image.
-        img = cv.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        # img = cv.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
         # Resize overlay
         resized_eye = resize_overlay(overlays[0], w, h)
 
-        # Place overlay(eyes) on the image.
-        img = place_overlay(img, resized_eye, x, y, w, h)
-
-        # Place the googly eye overlay in the image.
-        #img[y:y+h, x:x+w] = resized_eye
+        # Place overlay into the image frame.
+        img = place_overlay(x, y, w, h, img, resized_eye)
 
     show_image(img)
 
@@ -60,27 +57,37 @@ def resize_overlay(img, w, h):
     return cv.resize(img, (w, h))
 
 
-def place_overlay(img, overlay, x, y, w, h):
-    # Remove alpha channel from overlay.
-    b, g, r, a = cv.split(overlay)
-    overlay_rgb = cv.merge((b, g, r))
+def place_overlay(x, y, w, h, img, resized_eye):
+    """# Place the googly eye overlay in the image.
+    # Place a transparent overlay (googly eye) on the image.
+    # Difficulty is placing rgba image with a transparent channel on an image with 3 channels (rgb).
+    # 1. Create an inverted mask of the overlay using its alpha channel.
+    # 1a. Take alpha channel from overlay.
+    # 1b. Subtract 255 to inverted the mask.
+    # 1c. Normalize alpha channel to values between 0 and 1 by dividing by 255.
+    # Why? So we can later apply the inverted mask using multiplication operator.
+    # 2. Apply the inverted mask on the region of interest, i.e. the detected eye in rgb.
+    # This results in an image where the values around the eyes are from the rgb and the eye is completely black.
+    # 3. Create a mask of the overlay using its alpha channel.
+    # 3a. Take alpha channel, 3b. Normalize values between 0 and 1.
+    # 4. Apply the mask on rgba overlay image.
+    # This results in an image where the values around the eye are black and the eye is from the rgb eye image.
+    # 5. Add up the two result images (background and foreground).
+    # 6. Insert the roi into the image."""
 
-    img[y:y+h, x:x+w] = overlay_rgb
-
-    # Apply some simple filtering to remove edge noise
-    mask = cv.medianBlur(a, 5)
-
-    roi = img[y:y+h, x:x+w]
-
-    # Black-out the area behind the logo in our original ROI
-    img1_bg = cv.bitwise_and(roi.copy(), roi.copy(), mask=cv.bitwise_not(mask))
-
-    # Mask out the logo from the logo image.
-    img2_fg = cv.bitwise_and(overlay_rgb, overlay_rgb, mask=mask)
-
-    # Update the original image with our new ROI
-    img[y:y+h, x:x+w] = cv.add(img1_bg, img2_fg)
-
+    roi = img[y:y + h, x:x + w]         # The region to be replaced by an overlay.
+    bg = roi.copy()                     # Background.
+    fg = resized_eye[:, :, 0:3].copy()  # Foreground.
+    # Create masks.
+    mask_inverted = np.atleast_3d(255 - resized_eye[:, :, 3]) / 255.0
+    mask = np.atleast_3d(resized_eye[:, :, 3]) / 255.0
+    # Apply masks.
+    np.multiply(roi, mask_inverted, out=bg, casting="unsafe")  # Step 1 and 2.
+    np.multiply(resized_eye[:, :, 0:3], mask, out=fg, casting="unsafe")
+    # Add up the background and foreground.
+    np.add(bg, fg, out=roi)
+    # Insert the (edited) overlay into the image frame.
+    img[y:y + h, x:x + w] = roi
     return img
 
 
@@ -117,13 +124,6 @@ def googly_eyes():
 
         # Convert RGB frame to grayscale.
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-
-        # Make a frame with an alpha channel.
-        # frame_rgba = cv.cvtColor(frame, cv.COLOR_BGR2BGRA)
-        #print("frame: ", frame.shape)
-        # b_channel, _, _ = cv.split(frame)
-        # frame_rgba[:, :, 3] = np.ones(b_channel.shape, dtype=b_channel.dtype)
-        #print("frame_rgba: ", frame_rgba.shape)
 
         if to_googly:
             # Detect eyes.
