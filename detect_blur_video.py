@@ -69,7 +69,7 @@ def detect_blur_video():
         if key == ord('q'):
             break
 
-        # Toggle blurring is 'b' is pressed.
+        # Toggle blurring if 'b' is pressed.
         if key == ord('b'):
             to_blur = not to_blur
 

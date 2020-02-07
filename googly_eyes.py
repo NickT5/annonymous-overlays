@@ -1,3 +1,4 @@
+import numpy as np
 import cv2 as cv
 
 
@@ -25,18 +26,21 @@ def detect_eye(eye_cascade, gray):
     return eyes
 
 
-def show_eyes(eyes, img):
+def show_eyes(eyes, img, overlays):
     """ Show the detected eyes with a rectangle on the original image. """
-    roi, blur = None, None
-    for (x, y, w, h) in eyes:
+    roi, resized_eye = None, None
+    for i, (x, y, w, h) in enumerate(eyes):
         # Draw a rectangle on the image.
         img = cv.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        # Create a ROI.
-        roi = roi_image(x, y, w, h, img)
-        # Blur the ROI.
-        blur = blur_eye_avg(roi)
-        # Place the blurred ROI in the image.
-        img[y:y+h, x:x+w] = blur
+
+        # Resize overlay
+        resized_eye = resize_overlay(overlays[0], w, h)
+
+        # Place overlay(eyes) on the image.
+        img = place_overlay(img, resized_eye, x, y, w, h)
+
+        # Place the googly eye overlay in the image.
+        #img[y:y+h, x:x+w] = resized_eye
 
     show_image(img)
 
@@ -44,6 +48,40 @@ def show_eyes(eyes, img):
 def roi_image(x, y, w, h, img):
     """ Return a ROI image based on the input rectangle (x, y, w, h) and the image. """
     return img[y:y + h, x:x + w]
+
+
+def load_overlays():
+    eye_1 = cv.imread("img/googly_eye_1.png", -1)  # Load image with an alpha channel.
+    eye_2 = cv.imread("img/googly_eye_2.png", -1)
+    return [eye_1, eye_2]
+
+
+def resize_overlay(img, w, h):
+    return cv.resize(img, (w, h))
+
+
+def place_overlay(img, overlay, x, y, w, h):
+    # Remove alpha channel from overlay.
+    b, g, r, a = cv.split(overlay)
+    overlay_rgb = cv.merge((b, g, r))
+
+    img[y:y+h, x:x+w] = overlay_rgb
+
+    # Apply some simple filtering to remove edge noise
+    mask = cv.medianBlur(a, 5)
+
+    roi = img[y:y+h, x:x+w]
+
+    # Black-out the area behind the logo in our original ROI
+    img1_bg = cv.bitwise_and(roi.copy(), roi.copy(), mask=cv.bitwise_not(mask))
+
+    # Mask out the logo from the logo image.
+    img2_fg = cv.bitwise_and(overlay_rgb, overlay_rgb, mask=mask)
+
+    # Update the original image with our new ROI
+    img[y:y+h, x:x+w] = cv.add(img1_bg, img2_fg)
+
+    return img
 
 
 def googly_eyes():
@@ -56,6 +94,9 @@ def googly_eyes():
     # Load the face classifier.
     eye_classifier = load_eye_classifier()
 
+    # Load overlays
+    overlays = load_overlays()
+
     while True:
         key = 0xFF & cv.waitKey(1)
 
@@ -63,7 +104,7 @@ def googly_eyes():
         if key == ord('q'):
             break
 
-        # Toggle blurring is 'b' is pressed.
+        # Toggle googly eyes if 'g' is pressed.
         if key == ord('g'):
             to_googly = not to_googly
 
@@ -77,13 +118,19 @@ def googly_eyes():
         # Convert RGB frame to grayscale.
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-        show_image(gray)
+        # Make a frame with an alpha channel.
+        # frame_rgba = cv.cvtColor(frame, cv.COLOR_BGR2BGRA)
+        #print("frame: ", frame.shape)
+        # b_channel, _, _ = cv.split(frame)
+        # frame_rgba[:, :, 3] = np.ones(b_channel.shape, dtype=b_channel.dtype)
+        #print("frame_rgba: ", frame_rgba.shape)
+
         if to_googly:
             # Detect eyes.
             eye_detections = detect_eye(eye_classifier, gray)
 
             # Show detected eyes.
-            show_eyes(eye_detections, frame)
+            show_eyes(eye_detections, frame, overlays)
         else:
             show_image(frame)
 

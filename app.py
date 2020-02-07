@@ -2,6 +2,7 @@ from detect_blur_image import detect_blur_image
 from detect_blur_video import detect_blur_video
 from googly_eyes import googly_eyes
 
+
 def menu():
     choice = input('''
 ---- Detect and blur faces -----
@@ -15,7 +16,8 @@ def menu():
 
 def main():
     while True:
-        choice = menu()
+        #choice = menu()
+        choice = '2'
         # Execute chosen menu option.
         if choice == '0':
             detect_blur_image()
