@@ -1,10 +1,11 @@
+import numpy as np
 import cv2 as cv
 from time import time
 
 
 def blur_face_avg(img):
     """ Return a (average) blurred version of the input image. """
-    return cv.blur(img, (29, 29))
+    return cv.blur(img, (91, 91))
 
 
 def show_face(img, window_name="Face"):
@@ -30,14 +31,33 @@ def show_faces(faces, img):
     """ Show the detected faces with a rectangle on the original image. """
     roi, blur = None, None
     for (x, y, w, h) in faces:
-        # Draw a rectangle on the image.
-        img = cv.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        # Calculate center point and radius for circular masks.
+        cx = w // 2
+        cy = h // 2
+        r = h // 2   # int(((w ** 2 + h ** 2) ** 0.5)/2)  # c² = a² + b², for a bigger circle, the roi itself needs to
+        # be bigger which results in inconsistencies.
+
+        # Draw a rectangle/circle on the image.
+        # img = cv.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        img = cv.circle(img, (x+cx, y+cy), r, (101, 201, 255), 2)
+
         # Create a ROI.
         roi = roi_image(x, y, w, h, img)
+
         # Blur the ROI.
         blur = blur_face_avg(roi)
-        # Place the blurred ROI in the image.
-        img[y:y+h, x:x+w] = blur
+
+        # Create masks (normal and inverted).
+        mask = np.full((roi.shape[0], roi.shape[1], 1), 0, dtype=np.uint8)  # Init black mask.
+        cv.circle(mask, (cx, cy), r, (255, 255, 255), -1)  # Fill in a white circle in the middle to create the mask.
+        mask_inverted = 255 - mask
+
+        # Apply the masks.
+        fg = cv.bitwise_and(blur, blur, mask=mask)         # Foreground: blurred circle face.
+        bg = cv.bitwise_and(roi, roi, mask=mask_inverted)  # Background: part outside the detected face.
+
+        # Add the foreground & background together and insert it into the frame.
+        img[y:y+h, x:x+w] = cv.add(fg, bg)
 
     show_face(img)
 
