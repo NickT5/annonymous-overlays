@@ -117,12 +117,12 @@ def detect_blur_video():
     # Get end time.
     time_end = time()
 
-    # Elapsed time in seconds.
+    # Calculate elapsed time (seconds).
     time_elapsed = time_end - time_start
     # Calculate and print frames per second.
     fps = n_frames / time_elapsed
     print(f"Fps = {fps:.2f}; Time elapsed = {time_elapsed:.2f} seconds.")
 
-    # When everything done, release the capture
+    # When everything done, release the capture.
     capture.release()
     cv.destroyAllWindows()

@@ -2,11 +2,6 @@ import numpy as np
 import cv2 as cv
 
 
-def blur_eye_avg(img):
-    """ Return a (average) blurred version of the input image. """
-    return cv.blur(img, (29, 29))
-
-
 def show_image(img, window_name="Frame"):
     """ Show the image. """
     if img is not None:
@@ -27,14 +22,21 @@ def detect_eye(eye_cascade, gray):
 
 
 def show_eyes(eyes, img, overlays):
-    """ Show the detected eyes with a rectangle on the original image. """
+    """ Show the detected eyes with an overlay on the original image. """
     roi, resized_eye = None, None
     for i, (x, y, w, h) in enumerate(eyes):
-        # Draw a rectangle on the image.
+        # # Draw a rectangle on the image.
         # img = cv.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        #
+        # # Draw a circle around the detected eye.
+        # cx = x + (w//2)
+        # cy = y + (h//2)
+        # r = int(((w ** 2 + h ** 2) ** 0.5)/2)    # c² = a² + b²
+        # img = cv.circle(img, (cx, cy), r, (0, 255, 0), 2)
 
         # Resize overlay
-        resized_eye = resize_overlay(overlays[0], w, h)
+        if i >= len(overlays): i = 0
+        resized_eye = resize_overlay(overlays[i], w, h)
 
         # Place overlay into the image frame.
         img = place_overlay(x, y, w, h, img, resized_eye)
@@ -78,20 +80,22 @@ def place_overlay(x, y, w, h, img, resized_eye):
     roi = img[y:y + h, x:x + w]         # The region to be replaced by an overlay.
     bg = roi.copy()                     # Background.
     fg = resized_eye[:, :, 0:3].copy()  # Foreground.
+
     # Create masks.
     mask_inverted = np.atleast_3d(255 - resized_eye[:, :, 3]) / 255.0
     mask = np.atleast_3d(resized_eye[:, :, 3]) / 255.0
+
     # Apply masks.
     np.multiply(roi, mask_inverted, out=bg, casting="unsafe")  # Step 1 and 2.
     np.multiply(resized_eye[:, :, 0:3], mask, out=fg, casting="unsafe")
-    # Add up the background and foreground.
-    np.add(bg, fg, out=roi)
-    # Insert the (edited) overlay into the image frame.
-    img[y:y + h, x:x + w] = roi
+
+    # Add the foreground & background together and insert it into the frame.
+    img[y:y + h, x:x + w] = np.add(bg, fg)
     return img
 
 
 def googly_eyes():
+    """ Main function """
     # Toggle googly eyes variable.
     to_googly = True
 
@@ -134,6 +138,6 @@ def googly_eyes():
         else:
             show_image(frame)
 
-    # When everything done, release the capture
+    # When everything done, release the capture.
     capture.release()
     cv.destroyAllWindows()

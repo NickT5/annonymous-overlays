@@ -44,7 +44,7 @@ def show_eyes(eyes, img, overlays):
         # img = cv.circle(img, (cx, cy), r, (0, 255, 0), 2)
 
         # Resize overlay
-        if i > len(overlays): i = 0
+        if i >= len(overlays): i = 0
         resized_eye = resize_overlay(overlays[i], w, h)
 
         # Place overlay into the image frame.
